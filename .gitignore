@@ -1,0 +1,8 @@
+.env
+!.env.sample
+
+dist
+.idea
+models
+/logs
+node_modules

@@ -1,0 +1,64 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Dataspace Assistant",
+    "version": "0.1.0",
+    "description": "Typescript and Express LangChain Chatbot"
+  },
+  "paths": {
+    "/v1/mongoatlas/embedding": {
+      "post": {
+        "summary": "embed",
+        "tags": [
+          "Mongodb Atlas"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/v1/mongoatlas/chat": {
+      "post": {
+        "summary": "chat",
+        "tags": [
+          "Mongodb Atlas"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "description": "message for LLM",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    }
+  },
+  "components": {},
+  "tags": [
+    {
+      "name": "Mongodb Atlas",
+      "description": "MongoDB Atlas Routes"
+    }
+  ]
+}
