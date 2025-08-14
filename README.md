@@ -215,16 +215,16 @@ pnpm generate-swagger
 
 ## To Do
 
-* [] docker
-* [] update docs
-* [] merge routes
-* [] add offers model
-* [] Split embedding Logic
-* [] add models support
-* [] add embedding support
-* [] update .env
-* [] test
-* [] prompt selector 
-* [] admin protected routes
-* [] add archi and flow diagrams
-* [] load balancing tests
+* [ ] docker
+* [ ] update docs
+* [ ] merge routes
+* [ ] add offers model
+* [ ] Split embedding Logic
+* [ ] add models support
+* [ ] add embedding support
+* [ ] update .env
+* [ ] test
+* [ ] prompt selector 
+* [ ] admin protected routes
+* [ ] add archi and flow diagrams
+* [ ] load balancing tests
