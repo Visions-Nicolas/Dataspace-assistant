@@ -26,7 +26,7 @@ export const chat = async (req: Request, res: Response, next: NextFunction) => {
             new HumanMessage(userPrompt(contextTexts, message))
         ]);
 
-        res.json({
+        res.setHeader('x-assistant-identifier', process.env.ASSISTANT_IDENTIFIER ?? '').json({
             response,
             ...(result ? { retrieved_count: store.topDocs.length } : ''),
             ...(result ? { retrieved_docs: store.topDocs } : ''),

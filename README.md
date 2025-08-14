@@ -45,33 +45,33 @@ cp .env.sample .env
 ## 🐳 Docker
 
 From root directory
-```shell
-docker build -t dataspace-assistant .
+```bash
+docker build --no-cache -t dataspace-assistant .
 ```
 
-```shell
+```bash
 docker run --env-file ./.env --name assistant -p 3001:3000 dataspace-assistant
 ```
 
 ## 🛠️ Setup
 
-```shell
+```bash
 git clone
 ```
 
-```shell
+```bash
 pnpm i
 ```
 
-```shell
+```bash
 pnpm build
 ```
 
-```shell
+```bash
 pnpm start
 ```
 
-```shell
+```bash
 pnpm dev
 ```
 
@@ -99,7 +99,7 @@ Once the prerequisites are validated, the routes `/embedding` can be used to pre
 > 
 > ```
 > 
-> ```shell
+> ```bash
 > docker compose up -d --build
 > ```
 > 
@@ -216,7 +216,7 @@ POST /v1/mongoatlas/chat?result=true b
 The **Swagger** documentation is available on the `/docs` endpoint for the running apps, or can be found in the `/docs` directory.
 
 to regenerate a new `swagger.json` use 
-```shell
+```bash
 pnpm generate-swagger
 ```
 
