@@ -1,20 +1,20 @@
 import { ChatOpenAI } from "@langchain/openai";
+import {ModelLoaders} from "../model.loaders";
+import {Logger} from "../../libs/loggers";
 
-export class OpenaiModelsLoaders {
-    public openai;
-    public contextLength: number;
+export class OpenaiModelsLoaders extends ModelLoaders{
 
     constructor() {
-        this.contextLength = this.getModelContextLength(process.env.MODEL || "gpt-4o-mini");
-
-        this.openai = new ChatOpenAI({
-            modelName: process.env.MODEL,      // Ex: "gpt-4o-mini"
+        super(new ChatOpenAI({
+            modelName: process.env.MODEL, // Ex: "gpt-4o-mini"
             temperature: 0.2,
             openAIApiKey: process.env.OPENAI_API_KEY
-        });
+        }));
+
+        this.contextLength = this.getModelContextLength(process.env.MODEL || "gpt-4o-mini")
     }
 
-    private getModelContextLength(model: string): number {
+    getModelContextLength(model: string): number {
         // Tableau des context lengths connus
         const limits: Record<string, number> = {
             "gpt-4o-mini": 128000,
@@ -32,7 +32,8 @@ export class OpenaiModelsLoaders {
             message = message.slice(0, maxChars);
         }
 
-        const response = await this.openai.invoke(message);
+        const response = await this.model.invoke(message);
+        Logger.info({ message: `💬 Message Answered.` });
         return response.content?.toString() || "";
     }
 }

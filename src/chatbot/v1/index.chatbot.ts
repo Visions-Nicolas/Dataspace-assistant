@@ -1,12 +1,14 @@
-import {NextFunction, Request, Response} from 'express';
-import {MongoDBAtlasVectorSearch} from "@langchain/mongodb";
-import {HumanMessage, SystemMessage} from "@langchain/core/messages";
+import { NextFunction, Request, Response } from 'express';
 import {Logger} from "../../libs/loggers";
-import {systemPrompt, userPrompt} from "../../helpers/prompt.helpers";
 import {StoreFactory} from "../../factory/store.factory";
+import {HumanMessage, SystemMessage} from "@langchain/core/messages";
+import {systemPrompt, userPrompt} from "../../helpers/prompt.helpers";
 import {ModelFactory} from "../../factory/model.factory";
 
-export const mongoAtlasChat = async (req: Request, res: Response, next: NextFunction) => {
+/**
+ *
+ */
+export const chat = async (req: Request, res: Response, next: NextFunction) => {
     const {message} = req.body;
     const {result} = req.query;
     if (!message || typeof message !== "string") {
@@ -31,7 +33,7 @@ export const mongoAtlasChat = async (req: Request, res: Response, next: NextFunc
         });
     } catch (err) {
         console.error(err)
-        Logger.error({ message: `Error /mongoatlas/chat`, error: (err as ErrorConstructor | undefined) });
+        Logger.error({ message: `Error /chat`, error: (err as ErrorConstructor | undefined) });
         res.status(500).json({error: err});
     }
 }

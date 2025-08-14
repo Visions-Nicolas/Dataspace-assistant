@@ -11,7 +11,7 @@
 ## ⚙️ Configuration
 
 ```dotenv
-PORT=3501 #PORT
+PORT=3000 #PORT
 
 #LLM MODEL
 MODEL_URL=http://localhost:11434 #MODEL URL FOR LOCAL USE WITH OLLAMA
@@ -42,6 +42,17 @@ OPENAI_API_KEY=sk.... #OPENAI KEY IF OPENAI MODEL OR EMBEDDING IS USED
 cp .env.sample .env
 ```
 
+## 🐳 Docker
+
+From root directory
+```shell
+docker build -t dataspace-assistant .
+```
+
+```shell
+docker run --env-file ./.env --name assistant -p 3001:3000 dataspace-assistant
+```
+
 ## 🛠️ Setup
 
 ```shell
@@ -68,10 +79,10 @@ pnpm dev
 
 Before running any chat request, the data need to be embedded and some prerequisites are needed:
 * a **Mongodb** database with offers from the `Synthesis`
-* a **Mongodb atlas database** with a vector index of a **Qdrant** database
+* a **Mongodb atlas database** with a vector index or a **Qdrant** database
 * `.env` file
 
-Once the prerequisites are validated, the routes `/embedding` can be used to prepare the data for the use of the vector and LLMs.
+Once the prerequisites are validated, the routes `/embedding` can be used to prepare the data.
 
 > ```yaml
 > docker-compose.yaml
@@ -95,7 +106,7 @@ Once the prerequisites are validated, the routes `/embedding` can be used to pre
 
 ## 💬 Chat
 
-Once the embedding has been run the `/chat` routes can be used. Currently only one model can be used.
+Once the embedding has been run the `/chat` routes can be used.
 
 The routes can be used this way: 
 
@@ -213,18 +224,21 @@ pnpm generate-swagger
 
 🚧**WIP**🛠️
 
-## To Do
+## 📐 Architecture
 
-* [ ] docker
-* [ ] update docs
-* [ ] merge routes
-* [ ] add offers model
+🚧**WIP**🛠️
+
+## 📌 To Do
+
+* [x] Simple Docker
+* [X] Update error in README.md
+* [x] Merge routes
+* [ ] Add offers model
 * [ ] Split embedding Logic
-* [ ] add models support
-* [ ] add embedding support
-* [ ] update .env
-* [ ] test
-* [ ] prompt selector 
-* [ ] admin protected routes
-* [ ] add archi and flow diagrams
-* [ ] load balancing tests
+* [ ] Add models support
+* [ ] Add embedding support
+* [ ] Update .env
+* [ ] Tests
+* [ ] Prompt selector 
+* [x] Admin protected routes first version
+* [ ] Add archi and flow diagrams

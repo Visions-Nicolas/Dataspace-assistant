@@ -6,12 +6,9 @@
     "description": "Typescript and Express LangChain Chatbot"
   },
   "paths": {
-    "/v1/mongoatlas/embedding": {
-      "post": {
-        "summary": "embed",
-        "tags": [
-          "Mongodb Atlas"
-        ],
+    "/health": {
+      "get": {
+        "summary": "Health",
         "produces": [
           "application/json"
         ],
@@ -22,14 +19,23 @@
         }
       }
     },
-    "/v1/mongoatlas/chat": {
+    "/v1/chat": {
       "post": {
         "summary": "chat",
         "tags": [
-          "Mongodb Atlas"
+          "Chat"
         ],
         "produces": [
           "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "result",
+            "description": "optional query params to retrieve the bests result in the response",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
         ],
         "requestBody": {
           "content": {
@@ -52,13 +58,33 @@
           }
         }
       }
+    },
+    "/v1/embedding": {
+      "post": {
+        "summary": "embed",
+        "tags": [
+          "Embedding"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
     }
   },
   "components": {},
   "tags": [
     {
-      "name": "Mongodb Atlas",
-      "description": "MongoDB Atlas Routes"
+      "name": "Embedding",
+      "description": "Embedding Routes"
+    },
+    {
+      "name": "Chat",
+      "description": "Chat Routes"
     }
   ]
 }

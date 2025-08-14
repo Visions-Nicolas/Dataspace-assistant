@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import {QdrantVectorStore} from "@langchain/qdrant";
 import {HumanMessage, SystemMessage} from "@langchain/core/messages";
-import {ModelLoaders} from "../../loaders/model.loaders";
 import {Logger} from "../../libs/loggers";
-import {EmbeddingLoaders} from "../../loaders/embedding.loaders";
 import {truncate} from "../../helpers/truncate.helpers";
 import {systemPrompt, userPrompt} from "../../helpers/prompt.helpers";
+import {EmbeddingFactory} from "../../factory/embedding.factory";
+import {ModelFactory} from "../../factory/model.factory";
 
 /**
  *
@@ -18,7 +18,7 @@ export const qdrantChat = async (req: Request, res: Response, next: NextFunction
     }
 
     try {
-        const embeddings = await EmbeddingLoaders.getInstance();
+        const embeddings = EmbeddingFactory.get();
         Logger.debug({ message: "Connecting to Qdrant..." });
         const vectorStore = new QdrantVectorStore(embeddings.getEmbeddingsInterface(), {
             url: "http://localhost:6333", // URL de ton Qdrant
@@ -50,7 +50,7 @@ export const qdrantChat = async (req: Request, res: Response, next: NextFunction
             .join("\n\n---\n\n");
 
         //invoke model
-        const model = await ModelLoaders.getInstance();
+        const model = ModelFactory.get();
 
         const response = await model.invoke([
             new SystemMessage(systemPrompt),

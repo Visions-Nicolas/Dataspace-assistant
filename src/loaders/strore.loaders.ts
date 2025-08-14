@@ -1,46 +1,48 @@
-import {OllamaModelsLoaders} from "./models/ollama.models.loaders";
-import {Logger} from "../libs/loggers";
-import {MongoatlasStoresLoaders} from "./stores/mongoatlas.stores.loaders";
-import {QdrantStoresLoaders} from "./stores/qdrant.stores.loaders";
+import type { Collection, Document as MongoDocument } from "mongodb";
+import {EmbeddingLoaders} from "./embedding.loaders";
+import {EmbeddingFactory} from "../factory/embedding.factory";
 
-export class StoreLoaders{
-    private static instance: StoreLoaders;
-    private storage;
 
-    private constructor(storage?: any) {
-        this.storage = storage;
+export abstract class StoreLoaders {
+    protected _collection: Collection<MongoDocument>;
+    private _topDocs: any;
+    private _embeddings: EmbeddingLoaders;
+    private _docs: { _id: any; pageContent: string }[] = [];
+
+    protected constructor(collection: Collection<MongoDocument>) {
+        this._collection = collection;
+        this._embeddings = EmbeddingFactory.get();
     }
 
-    public static async getInstance(collection?: any): Promise<StoreLoaders> {
-        if (!StoreLoaders.instance) {
-            switch(process.env.STORE){
-                case 'mongoatlas': {
-                    Logger.debug({ message: `Using MongoDBAtlas Store🛢` })
-                    StoreLoaders.instance = new StoreLoaders(new MongoatlasStoresLoaders());
-                    break;
-                }
-                case 'qdrant': {
-                    Logger.debug({ message: `Using Qdrant Store🛢` })
-                    StoreLoaders.instance = new StoreLoaders(new QdrantStoresLoaders());
-                    break;
-                }
-                default: {
-                    Logger.debug({ message: `Using empty StoreLoaders` })
-                    StoreLoaders.instance = new StoreLoaders();
-                }
-            }
-
-        }
-
-        return StoreLoaders.instance;
+    get collection(): Collection<MongoDocument> {
+        return this._collection;
     }
 
-    public async store(docs: any[]): Promise<void>{
-
-        return await this.storage?.store(docs);
+    get topDocs(): any {
+        return this._topDocs;
     }
 
-    public setCollection(collection: any): void{
-        return this.storage?.setCollection(collection);
+    set topDocs(value: any){
+        this._topDocs = value;
     }
+
+    get docs(): any {
+        return this._docs;
+    }
+
+    set docs(value: { _id: any; pageContent: string }[]){
+        this._docs = value;
+    }
+
+    get embeddings(): any {
+        return this._embeddings;
+    }
+
+    set embeddings(value: EmbeddingLoaders){
+        this._embeddings = value;
+    }
+
+    abstract prepare(): Promise<number>;
+    abstract store(): Promise<void>;
+    abstract retriever(message: string): Promise<any>;
 }

@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import {ChatOllama} from "@langchain/ollama";
 import {HumanMessage, SystemMessage} from "@langchain/core/messages";
-import {EmbeddingLoaders} from "../../loaders/embedding.loaders";
 import {getMongooseConnection} from "../../loaders/connections/mongoose.connections.loaders";
 import {cosineSimilarity} from "../../helpers/consine.helpers";
+import {EmbeddingFactory} from "../../factory/embedding.factory";
 
 /**
  *
@@ -19,7 +19,7 @@ export const mongodbChat = async (req: Request, res: Response, next: NextFunctio
         const db = await getMongooseConnection();
         const col = db.collection(process.env.COLLECTION ?? 'offers');
 
-        const embeddings = await EmbeddingLoaders.getInstance();
+        const embeddings = EmbeddingFactory.get();
 
         console.log("Computing query embedding...");
         const queryEmbedding = await embeddings.embedQuery(message);

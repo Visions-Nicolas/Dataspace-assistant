@@ -1,34 +1,27 @@
-import express, {Request, Response} from "express";
+import express from "express";
 import {loadRoutes} from "./routes/v1/index.router";
 import './config';
-import {ModelLoaders} from "./loaders/model.loaders";
-import {EmbeddingLoaders} from "./loaders/embedding.loaders";
-import {StoreLoaders} from "./loaders/strore.loaders";
-import swaggerJSDoc from 'swagger-jsdoc';
-import {OpenAPIOption} from "./config/openapi-options";
-import {serve, setup} from "swagger-ui-express";
+import {getMongodbConnection} from "./loaders/connections/mongodb.connections.loaders";
+import {StoreFactory} from "./factory/store.factory";
+import {EmbeddingFactory} from "./factory/embedding.factory";
+import {ModelFactory} from "./factory/model.factory";
 
 
 async function start() {
     const app = express();
     app.use(express.json());
 
-    app.get("/health", (req: Request, res: Response) => {
-        res.json({ status: "OK" });
-    });
+    //Get offers collection
+    const client = await getMongodbConnection()
+    const collection = client.db(process.env.DB).collection(process.env.COLLECTION!);
 
-    // Setup Swagger JSDoc
-    const specs = swaggerJSDoc(OpenAPIOption);
-
-    app.use('/docs', serve, setup(specs));
-
-    await ModelLoaders.getInstance();
-    await EmbeddingLoaders.getInstance();
-    await StoreLoaders.getInstance();
+    ModelFactory.init();
+    EmbeddingFactory.init();
+    StoreFactory.init(collection);
 
     loadRoutes(app);
 
-    app.listen(process.env.PORT || 3501, () => console.log(`Server running on http://localhost:${process.env.PORT || 3501}`));
+    app.listen(process.env.PORT || 3501, () => console.log(`🚀 Server running on http://localhost:${process.env.PORT || 3501}`));
 }
 
 start().catch(console.error);
