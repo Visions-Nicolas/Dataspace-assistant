@@ -7,11 +7,15 @@
 * [x] Mongodb
 * [x] [Mongodb atlas](https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-overview/#atlas-vector-search-indexes) or [Qdrant](https://qdrant.tech/documentation/)
 * [x] Local [Ollama](https://ollama.com/) or [OpenAI](https://platform.openai.com/api-keys)
+* [ ] (optional) Docker
+* [ ] (optional) Docker compose
 
 ## ⚙️ Configuration
 
 ```dotenv
 PORT=3000 #PORT
+
+ASSISTANT_IDENTIFIER=assistant1 #Allow to identify the assistant who respond in headers
 
 #LLM MODEL
 MODEL_URL=http://localhost:11434 #MODEL URL FOR LOCAL USE WITH OLLAMA
@@ -53,6 +57,77 @@ docker build --no-cache -t dataspace-assistant .
 docker run --env-file ./.env --name assistant -p 3001:3000 dataspace-assistant
 ```
 
+## 🐙 Docker Compose
+
+The docker compose file provide an example of a load balancing between two dataspace assistant and nginx. An Ollama container with llama3.2, llama3.1 and mxbai-embed-large is configured and Qdrant too.
+
+From root directory
+```bash
+docker compose up -d --build
+```
+
+Example of two assistant with different configuration using docker compose
+
+```dotenv
+PORT=3000
+
+ASSISTANT_IDENTIFIER=assistant-llama3.1-mongoatlas
+
+#LLM MODEL
+MODEL_URL=http://ollama:11434
+MODEL=llama3.1
+
+#STORE
+STORE=mongoatlas
+
+#QDRANT
+QDRANT_URI=http://ollama:6333
+QDRANT_COLLECTION=offers_vectors
+
+#DB
+MONGODB_URI=mongodb+srv://<user>:<password>@<url>?retryWrites=true&w=majority&appName=Cluster0
+DB=synthesis
+COLLECTION=offers
+
+#EMBEDDING
+EMBEDDING_MODEL=mxbai-embed-large
+EMBEDDING_URL=http://ollama:11434
+EMBEDDING_BATCH_SIZE=100
+
+#ADMIN
+ADMIN_KEY=admin_key
+```
+
+```dotenv
+PORT=3000
+
+ASSISTANT_IDENTIFIER=assistant-llama3.2-qdrant
+
+#LLM MODEL
+MODEL_URL=http://ollama:11434
+MODEL=llama3.2
+
+#STORE
+STORE=qdrant
+
+#QDRANT
+QDRANT_URI=http://qdrant:6333
+QDRANT_COLLECTION=offers_vectors
+
+#DB
+MONGODB_URI=mongodb+srv://<user>:<password>@<url>?retryWrites=true&w=majority&appName=Cluster0
+DB=synthesis
+COLLECTION=offers
+
+#EMBEDDING
+EMBEDDING_MODEL=mxbai-embed-large
+EMBEDDING_URL=http://ollama:11434
+EMBEDDING_BATCH_SIZE=100
+
+#ADMIN
+ADMIN_KEY=admin_key
+```
+
 ## 🛠️ Setup
 
 ```bash
@@ -82,7 +157,7 @@ Before running any chat request, the data need to be embedded and some prerequis
 * a **Mongodb atlas database** with a vector index or a **Qdrant** database
 * `.env` file
 
-Once the prerequisites are validated, the routes `/embedding` can be used to prepare the data.
+Once the prerequisites are validated, the routes `/embedding` can be used to prepare the data. The header `x-assistant-admin-key` is required and is value is defined in the `.env` file with the variable `ADMIN_KEY`.
 
 > ```yaml
 > docker-compose.yaml
@@ -110,15 +185,19 @@ Once the embedding has been run the `/chat` routes can be used.
 
 The routes can be used this way: 
 
+* Request
 ```http request
-POST /v1/mongoatlas/chat?result=true b
+POST /v1/mongoatlas/chat?result=true
 ```
-```jsonc
-#Body
+* Body
+
+```json
 {
   message: "Wich offers can be used for education purpose ?"
 }
 ```
+
+* Response with `?result=true`
 
 ```json
 {
@@ -204,10 +283,17 @@ POST /v1/mongoatlas/chat?result=true b
     ]
 }
 ```
-
+* Response without query params
 ```json
 {
   "response": "Based on the context, the following offers can be used for education purposes:\n\n1. Match learner skills\n2. Free educational services integration\n3. Teacher Avatar \n4. Karriereassist Service"
+}
+```
+
+* Headers Response
+```json
+{
+  "x-assistant-identifier": "assistant-llama3.2-qdrant"
 }
 ```
 

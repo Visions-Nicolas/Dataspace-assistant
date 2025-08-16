@@ -1,0 +1,71 @@
+services:
+  assistant1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: assistant1
+    expose:
+      - "3000"
+    env_file:
+      - ./.env.sample
+    networks:
+      - assistant-net
+
+  assistant2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: assistant2
+    expose:
+      - "3000"
+    env_file:
+      - ./.env.sample
+    networks:
+      - assistant-net
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "3500:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - assistant-net
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434" # API Ollama
+    volumes:
+      - ./ollama:/root/.ollama  # persistance des modèles
+    entrypoint: >
+      sh -c "
+        ollama serve &
+        sleep 5 &&
+        ollama pull llama3.1 &&
+        ollama pull llama3.2 &&
+        ollama pull mxbai-embed-large &&
+        wait
+      "
+    networks:
+      - assistant-net
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    networks:
+      - assistant-net
+
+networks:
+  assistant-net:
+    driver: bridge

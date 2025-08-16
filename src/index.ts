@@ -6,7 +6,6 @@ import {StoreFactory} from "./factory/store.factory";
 import {EmbeddingFactory} from "./factory/embedding.factory";
 import {ModelFactory} from "./factory/model.factory";
 
-
 async function start() {
     const app = express();
     app.use(express.json());
@@ -21,7 +20,7 @@ async function start() {
 
     loadRoutes(app);
 
-    app.listen(process.env.PORT || 3501, () => console.log(`🚀 Server running on http://localhost:${process.env.PORT || 3501}`));
+    app.listen(process.env.PORT || 3000, () => console.log(`🚀 Server running on http://localhost:${process.env.PORT || 3000}`));
 }
 
 start().catch(console.error);

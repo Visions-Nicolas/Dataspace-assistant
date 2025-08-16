@@ -4,6 +4,7 @@ import {QdrantVectorStore} from "@langchain/qdrant";
 import {Collection, Document} from "mongodb";
 import {StoreLoaders} from "../strore.loaders";
 import {EmbeddingFactory} from "../../factory/embedding.factory";
+import {truncate} from "../../helpers/truncate.helpers";
 
 export class QdrantStoresLoaders extends StoreLoaders {
     constructor(collection: Collection<Document>) {
@@ -11,7 +12,34 @@ export class QdrantStoresLoaders extends StoreLoaders {
     }
 
     public async prepare(): Promise<number> {
-        return 0;
+        const rawDocs = await this.collection.find().toArray();
+        this.embeddings = EmbeddingFactory.get();
+
+        for (let i = 0; i < rawDocs.length; i++) {
+            const doc = rawDocs[i];
+            const text = [
+                `Offer:`,
+                `name: ${doc.name}`,
+                `description: ${truncate(doc.description || "", 500)}`,
+                `category: ${doc.category}`,
+                `domain: ${doc.domain}`,
+                `pricing: ${doc.pricing}`,
+                `marketplace: ${doc.marketplace}`,
+                `marketplaceUrl: ${doc.marketplaceUrl}`,
+                `url: ${doc.url}`,
+                `provider: ${doc.provider}`,
+                `pricing: ${doc.pricing}`,
+                `termsOfUse: ${doc.termsOfUse}`,
+                `type: ${doc.type}`
+            ].join(" - ");
+
+            this.docs.push({
+                _id: doc._id,
+                pageContent: text,
+            });
+        }
+
+        return rawDocs.length
     }
 
     public async store(){
@@ -31,7 +59,7 @@ export class QdrantStoresLoaders extends StoreLoaders {
 
                 // Générer les embeddings en parallèle
                 const embeddedDocs = await Promise.all(
-                    batch.map(async (doc: { pageContent: unknown; }) => {
+                    batch.map(async (doc: { pageContent: any; }) => {
                         const vector = await embeddings.embedQuery(doc.pageContent);
                         return {
                             ...doc,
@@ -43,7 +71,7 @@ export class QdrantStoresLoaders extends StoreLoaders {
                 // Envoyer vers Qdrant
                 await QdrantVectorStore.fromDocuments(
                     embeddedDocs.map(doc => ({
-                        pageContent: doc.pageContent,
+                        pageContent: truncate(doc.pageContent || "", 1024),
                         metadata: doc.metadata
                     })),
                     embeddings.getEmbeddingsInterface(),
