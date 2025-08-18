@@ -5,10 +5,12 @@ import {Logger} from "../../libs/loggers";
 export class OllamaModelsLoaders extends ModelLoaders{
 
     constructor() {
-        super(new ChatOllama({
+        const chat = new ChatOllama({
             baseUrl: process.env.MODEL_URL,
             model: process.env.MODEL
-        }));
+        });
+        super(chat);
+        this._model = chat;
     }
 
     public async invoke(message: any): Promise<string> {

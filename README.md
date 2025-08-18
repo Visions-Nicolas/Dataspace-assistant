@@ -6,9 +6,26 @@
 * [x] [Node LTS](https://nodejs.org/fr)
 * [x] Mongodb
 * [x] [Mongodb atlas](https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-overview/#atlas-vector-search-indexes) or [Qdrant](https://qdrant.tech/documentation/)
-* [x] Local [Ollama](https://ollama.com/) or [OpenAI](https://platform.openai.com/api-keys)
+* [x] Local [Ollama](https://ollama.com/) or [OpenAI](https://platform.openai.com/api-keys) API Key or MistralAI API Key
 * [ ] (optional) Docker
 * [ ] (optional) Docker compose
+
+## Supported Models
+
+| Provider   | Models                                                         | Prerequisites |
+|------------|----------------------------------------------------------------|---------------|
+| **Ollama** | `llama3.1`, `llama3.2`                                         | Ollama must be installed locally, and the corresponding model pulled via `ollama pull <model>`. |
+| **OpenAI** | `gpt-3.5-turbo`, `gpt-4-turbo `, `gpt-4o`, `gpt-4o-mini`       | An OpenAI account and API key (`OPENAI_API_KEY`) are required. |
+| **Mistral AI** | `magistral-medium-2507`, `mistral-medium-2508` | A Mistral AI account and API key (`MISTRAL_API_KEY`) are required. |
+
+## Supported Embedding Models
+
+
+| Provider   | Models                            | Prerequisites |
+|------------|-----------------------------------|---------------|
+| **Ollama** | `mxbai-embed-large`                    | Ollama must be installed locally, and the corresponding model pulled via `ollama pull <model>`. |
+| **Mistral AI** | `mistral-embed` | A Mistral AI account and API key (`MISTRAL_API_KEY`) are required. |
+
 
 ## ⚙️ Configuration
 
@@ -19,7 +36,8 @@ ASSISTANT_IDENTIFIER=assistant1 #Allow to identify the assistant who respond in 
 
 #LLM MODEL
 MODEL_URL=http://localhost:11434 #MODEL URL FOR LOCAL USE WITH OLLAMA
-MODEL=llama3.1 #MODEL USED llama3.1 | llama3.2 | gpt-4o-mini | gpt-4o | gpt-4-turbo | gpt-3.5-turbo
+MODEL=llama3.1 #MODEL USED llama3.1 | llama3.2 | gpt-4o-mini | gpt-4o | gpt-4-turbo | gpt-3.5-turbo | magistral-medium-2507 | mistral-medium-2508
+TEMPERATURE=0.5 #Temperature of the model
 
 #STORE
 STORE=mongoatlas #STORE USED mongoatlas | qdrant
@@ -29,20 +47,26 @@ QDRANT_URI=http://localhost:6333 #QDRANT URL
 QDRANT_COLLECTION=offers_vectors #QDRANT COLLECTION NAME
 
 #DB
-MONGODB_URI=mongodb+srv://user:paswword@cluster.address.mongodb.net?retryWrites=true&w=majority #LOCALIZATION OF THE OFFERS
+MONGODB_URI=mongodb+srv://user:pasword@cluster.address.mongodb.net?retryWrites=true&w=majority #LOCALIZATION OF THE OFFERS
 DB=synthesis #DATABASE USED
 COLLECTION=offers #SPECIFIC COLLECTION
 
 #EMBEDDING
-EMBEDDING_MODEL=mxbai-embed-large #MODEL USE FOR EMBEDDING mxbai-embed-large (need local Ollama)
+EMBEDDING_MODEL=mxbai-embed-large #MODEL USE FOR EMBEDDING mxbai-embed-large (need local Ollama) | mistral-embed (need Mistral API Key)
 EMBEDDING_URL=http://localhost:11434 #PORT OF THE MODELS
 EMBEDDING_BATCH_SIZE=100 #BATCH SIZE WHEN EMBEDDING
 
 #OPEN_API
 OPENAI_API_KEY=sk.... #OPENAI KEY IF OPENAI MODEL OR EMBEDDING IS USED
+
+#MISTRAL
+MISTRAL_API_KEY=
+
+#ADMIN
+ADMIN_KEY=admin_key
 ```
 
-```dotenv
+```bash
 cp .env.sample .env
 ```
 
@@ -76,6 +100,7 @@ ASSISTANT_IDENTIFIER=assistant-llama3.1-mongoatlas
 #LLM MODEL
 MODEL_URL=http://ollama:11434
 MODEL=llama3.1
+TEMPERATURE=0.5
 
 #STORE
 STORE=mongoatlas
@@ -106,6 +131,7 @@ ASSISTANT_IDENTIFIER=assistant-llama3.2-qdrant
 #LLM MODEL
 MODEL_URL=http://ollama:11434
 MODEL=llama3.2
+TEMPERATURE=0.5
 
 #STORE
 STORE=qdrant
@@ -183,13 +209,19 @@ Once the prerequisites are validated, the routes `/embedding` can be used to pre
 
 Once the embedding has been run the `/chat` routes can be used.
 
-The routes can be used this way: 
+### Request —  `POST /v1/chat`
 
-* Request
-```http request
-POST /v1/mongoatlas/chat?result=true
-```
-* Body
+#### Query Parameters
+
+| Param    | Type    | Values          | Mandatory | Description                                                                                                             |
+|----------|---------|-----------------|-----------|-------------------------------------------------------------------------------------------------------------------------|
+| `type`   | string  | `rag`, `agent`  | Yes       | Defined mode of definition of the response. `rag` activate the Retrieval-Augmented Generation, `agent` use a LLM agent. |
+| `user`   | number  | `0`, `1`        | No        | Allow to select a specific user prompt.                                                                                 |
+| `result` | boolean | `true`, `false` | No        | If `true`, return the best results                                                                                      |
+| `system` | boolean | `0`, `1`        | No        | Allow to select a specific system prompt.                                                                               |
+
+
+### Body Params — `/v1/chat`
 
 ```json
 {
@@ -197,7 +229,7 @@ POST /v1/mongoatlas/chat?result=true
 }
 ```
 
-* Response with `?result=true`
+#### Responses
 
 ```json
 {
@@ -283,19 +315,23 @@ POST /v1/mongoatlas/chat?result=true
     ]
 }
 ```
-* Response without query params
 ```json
 {
   "response": "Based on the context, the following offers can be used for education purposes:\n\n1. Match learner skills\n2. Free educational services integration\n3. Teacher Avatar \n4. Karriereassist Service"
 }
 ```
 
-* Headers Response
+#### Headers Response
 ```json
 {
   "x-assistant-identifier": "assistant-llama3.2-qdrant"
 }
 ```
+        
+
+### Request —  `POST /v1/chat/:threadId`
+
+🚧**WIP**🛠️
 
 ## 📑 Documentations
 
@@ -322,9 +358,9 @@ pnpm generate-swagger
 * [ ] Add offers model
 * [ ] Split embedding Logic
 * [ ] Add models support
-* [ ] Add embedding support
+* [x] Add embedding support
 * [ ] Update .env
 * [ ] Tests
-* [ ] Prompt selector 
+* [x] Prompt selector 
 * [x] Admin protected routes first version
 * [ ] Add archi and flow diagrams

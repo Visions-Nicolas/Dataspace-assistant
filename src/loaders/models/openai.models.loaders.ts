@@ -7,7 +7,7 @@ export class OpenaiModelsLoaders extends ModelLoaders{
     constructor() {
         super(new ChatOpenAI({
             modelName: process.env.MODEL, // Ex: "gpt-4o-mini"
-            temperature: 0.2,
+            temperature: parseInt(process.env.TEMPERATURE ?? '0.2') ,
             openAIApiKey: process.env.OPENAI_API_KEY
         }));
 
@@ -15,7 +15,6 @@ export class OpenaiModelsLoaders extends ModelLoaders{
     }
 
     getModelContextLength(model: string): number {
-        // Tableau des context lengths connus
         const limits: Record<string, number> = {
             "gpt-4o-mini": 128000,
             "gpt-4o": 128000,

@@ -1,9 +1,13 @@
 export abstract class ModelLoaders {
-    protected model: any;
+    protected _model: any;
     public _contextLength: number | undefined;
 
     protected constructor(model: any) {
-        this.model = model;
+        this._model = model;
+    }
+
+    get model(): any{
+        return this._model;
     }
 
     get contextLength(): number{

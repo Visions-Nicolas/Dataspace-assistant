@@ -5,6 +5,7 @@ import {Collection, Document} from "mongodb";
 import {StoreLoaders} from "../strore.loaders";
 import {EmbeddingFactory} from "../../factory/embedding.factory";
 import {truncate} from "../../helpers/truncate.helpers";
+import {tool} from "@langchain/core/tools";
 
 export class QdrantStoresLoaders extends StoreLoaders {
     constructor(collection: Collection<Document>) {
@@ -36,6 +37,9 @@ export class QdrantStoresLoaders extends StoreLoaders {
             this.docs.push({
                 _id: doc._id,
                 pageContent: text,
+                metadata: {
+                    ...doc
+                }
             });
         }
 
@@ -59,10 +63,11 @@ export class QdrantStoresLoaders extends StoreLoaders {
 
                 // Générer les embeddings en parallèle
                 const embeddedDocs = await Promise.all(
-                    batch.map(async (doc: { pageContent: any; }) => {
+                    batch.map(async (doc: { pageContent: any; metadata: any; }) => {
                         const vector = await embeddings.embedQuery(doc.pageContent);
                         return {
-                            ...doc,
+                            pageContent: doc.pageContent,
+                            metadata: doc.metadata,
                             embedding: vector
                         };
                     })
@@ -70,10 +75,7 @@ export class QdrantStoresLoaders extends StoreLoaders {
 
                 // Envoyer vers Qdrant
                 await QdrantVectorStore.fromDocuments(
-                    embeddedDocs.map(doc => ({
-                        pageContent: truncate(doc.pageContent || "", 1024),
-                        metadata: doc.metadata
-                    })),
+                    embeddedDocs,
                     embeddings.getEmbeddingsInterface(),
                     {
                         url: process.env.QDRANT_URI,
@@ -93,6 +95,82 @@ export class QdrantStoresLoaders extends StoreLoaders {
         }
     }
 
-    public async retriever(message: string): Promise<any> {
+    public async rag(message: string): Promise<any> {
+        Logger.debug({ message: "Connecting to Qdrant..." });
+
+        const embeddings = EmbeddingFactory.get();
+
+        const vectorStore = new QdrantVectorStore(embeddings.getEmbeddingsInterface(), {
+            url: process.env.QDRANT_URI,
+            collectionName: process.env.QDRANT_COLLECTION
+        });
+
+        Logger.debug({ message: "Qdrant vector search..." });
+        // Recherche des k documents les plus proches
+        const k = 4;
+
+        const topDocs = await vectorStore.similaritySearch(message, k);
+
+        return topDocs
+            .map(doc => [
+                `Offer:`,
+                `name: ${doc.metadata.name}`,
+                `description: ${truncate(doc.metadata.description || "", 500)}`,
+                `category: ${doc.metadata.category}`,
+                `domain: ${doc.metadata.domain}`,
+                `pricing: ${doc.metadata.pricing}`,
+                `marketplace: ${doc.metadata.marketplace}`,
+                `marketplaceUrl: ${doc.metadata.marketplaceUrl}`,
+                `url: ${doc.metadata.url}`,
+                `provider: ${doc.metadata.provider}`,
+                `termsOfUse: ${doc.metadata.termsOfUse}`,
+                `type: ${doc.metadata.type}`
+            ].join(" - "))
+            .join("\n\n---\n\n");
+    }
+
+    public async agent(): Promise<any> {
+        Logger.debug({ message: "Connecting to Qdrant..." });
+
+        const embeddings = EmbeddingFactory.get();
+
+        const vectorStore = await QdrantVectorStore.fromExistingCollection(
+            embeddings.getEmbeddingsInterface(),
+            {
+                url: process.env.QDRANT_URI,
+                collectionName: process.env.QDRANT_COLLECTION,
+            }
+        );
+
+        const retriever = vectorStore.asRetriever();
+
+        return tool(
+            async (query: string) => {
+                console.log("query", query)
+                const topDocs = await retriever.invoke('quel l\'url de laBigAddress ?');
+
+                console.log("TOPDOCS", topDocs)
+
+                return topDocs
+                    .map(doc => [
+                        `Offer:`,
+                        `name: ${doc.metadata.name}`,
+                        `description: ${truncate(doc.metadata.description || "", 500)}`,
+                        `category: ${doc.metadata.category}`,
+                        `domain: ${doc.metadata.domain}`,
+                        `pricing: ${doc.metadata.pricing}`,
+                        `marketplace: ${doc.metadata.marketplace}`,
+                        `marketplaceUrl: ${doc.metadata.marketplaceUrl}`,
+                        `url: ${doc.metadata.url}`,
+                        `provider: ${doc.metadata.provider}`,
+                        `termsOfUse: ${doc.metadata.termsOfUse}`,
+                        `type: ${doc.metadata.type}`
+                    ].join(" - "))
+                    .join("\n\n---\n\n");
+            },
+            {
+                name: "search_qdrant",
+                description: "Recherche des offres pertinentes dans Qdrant à partir d'une requête utilisateur"
+            });
     }
 }

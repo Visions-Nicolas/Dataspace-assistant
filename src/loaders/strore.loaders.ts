@@ -44,5 +44,6 @@ export abstract class StoreLoaders {
 
     abstract prepare(): Promise<number>;
     abstract store(): Promise<void>;
-    abstract retriever(message: string): Promise<any>;
+    abstract rag(message: string): Promise<any>;
+    abstract agent(message?: string): Promise<any>;
 }

@@ -1,13 +1,12 @@
 import { Logger } from "../../libs/loggers";
 import { ProgressBarHelpers } from "../../helpers/progress-bar.helpers";
 import { truncate } from "../../helpers/truncate.helpers";
-import { MongoDBAtlasVectorSearch } from "@langchain/mongodb";
 import { Collection, Document } from "mongodb";
 import { StoreLoaders } from "../strore.loaders";
 import { EmbeddingFactory } from "../../factory/embedding.factory";
-import {tool} from "@langchain/core/tools";
+import {cosineSimilarity} from "../../helpers/consine.helpers";
 
-export class MongoatlasStoresLoaders extends StoreLoaders {
+export class MongodbStoresLoaders extends StoreLoaders {
     constructor(collection: Collection<Document>) {
         super(collection);
     }
@@ -82,42 +81,57 @@ export class MongoatlasStoresLoaders extends StoreLoaders {
 
     public async rag(message: string): Promise<any> {
         try {
-            Logger.log({ message: "Connecting to MongoDB Atlas Vector Search..." });
-
             const embeddings = EmbeddingFactory.get();
 
-            const vectorStore = new MongoDBAtlasVectorSearch(
-                embeddings.getEmbeddingsInterface(),
-                {
-                    collection: this.collection,
-                    indexName: "embedding",
-                    textKey: "pageContent",
-                    embeddingKey: "embedding",
+            console.log("Computing query embedding...");
+            const queryEmbedding = await embeddings.embedQuery(message);
+
+            console.log("Fetching all embeddings from MongoDB...");
+            // Charge les documents avec leurs embeddings (attention si dataset énorme)
+            const docs = await this.collection.find({}, {
+                projection: {
+                    _id: 1,
+                    embedding: 1,
+                    name: 1,
+                    description: 1,
+                    url: 1,
+                    category: 1,
+                    domain: 1,
+                    marketplace: 1,
+                    pricing: 1,
+                    provider: 1,
+                    type: 1
                 }
-            );
+            }).toArray();
 
-            const retriever = vectorStore.asRetriever();
+            // Calculer la similarité cosinus avec le queryEmbedding
+            const scoredDocs = docs
+                .map(doc => ({
+                    doc,
+                    score: cosineSimilarity(queryEmbedding, doc.embedding)
+                }))
+                // Tri décroissant par score (plus proche en premier)
+                .sort((a, b) => b.score - a.score);
 
-            const topDocs = await retriever.invoke(message);
+            const k = 5;
+            const topDocs = scoredDocs.slice(0, k);
 
-            this.topDocs = topDocs;
-
-            if (topDocs.length === 0) return '';
+            console.log(`Top ${k} docs retrieved`);
 
             return topDocs
-                .map(doc => [
+                .map((doc: any) => [
                     `Offer:`,
-                    `name: ${doc.metadata.name}`,
-                    `description: ${truncate(doc.metadata.description || "", 500)}`,
-                    `category: ${doc.metadata.category}`,
-                    `domain: ${doc.metadata.domain}`,
-                    `pricing: ${doc.metadata.pricing}`,
-                    `marketplace: ${doc.metadata.marketplace}`,
-                    `marketplaceUrl: ${doc.metadata.marketplaceUrl}`,
-                    `url: ${doc.metadata.url}`,
-                    `provider: ${doc.metadata.provider}`,
-                    `termsOfUse: ${doc.metadata.termsOfUse}`,
-                    `type: ${doc.metadata.type}`
+                    `name: ${doc.name}`,
+                    `description: ${truncate(doc.description || "", 500)}`,
+                    `category: ${doc.category}`,
+                    `domain: ${doc.domain}`,
+                    `pricing: ${doc.pricing}`,
+                    `marketplace: ${doc.marketplace}`,
+                    `marketplaceUrl: ${doc.marketplaceUrl}`,
+                    `url: ${doc.url}`,
+                    `provider: ${doc.provider}`,
+                    `termsOfUse: ${doc.termsOfUse}`,
+                    `type: ${doc.type}`
                 ].join(" - "))
                 .join("\n\n---\n\n");
         } catch (err) {
@@ -126,34 +140,9 @@ export class MongoatlasStoresLoaders extends StoreLoaders {
         }
     }
 
-    public async agent(): Promise<any> {
+    public async agent(message: string): Promise<any> {
         try {
-            Logger.log({ message: "Connecting to MongoDB Atlas Vector Search..." });
-
-            // Tool Mongo
-            return tool(
-                async (query: any) => {
-
-                    const embeddings = EmbeddingFactory.get();
-
-                    const vectorStore = new MongoDBAtlasVectorSearch(
-                        embeddings.getEmbeddingsInterface(),
-                        {
-                            collection: this.collection,
-                            indexName: "embedding",
-                            textKey: "pageContent",
-                            embeddingKey: "embedding",
-                        }
-                    );
-
-                    const result = await vectorStore.similaritySearchWithScore(query, 10);
-                    return JSON.stringify(result);
-                },
-                {
-                    name: "search_mongo",
-                    description: "Offer details from the offers database",
-                }
-            );
+            return '';
         } catch (err) {
             Logger.error({ message: "⛔ Retrieving failed" });
             console.error(err);
